@@ -301,10 +301,22 @@ export function extractVerdict(output: string): 'green' | 'yellow' | 'red' {
 
 /**
  * Extrae el guion actualizado del output del lente.
+ * Usa múltiples estrategias para manejar variaciones de formato entre Gemini y DeepSeek.
  */
 export function extractUpdatedScript(output: string, fallback: string): string {
-    const match = output.match(
-        /---\s*GUION ACTUALIZADO\s*---\n([\s\S]*?)\n---\s*FIN GUION\s*---/i
-    )
-    return match ? match[1].trim() : fallback
+    // Strategy 1: preferred format with exact delimiters (flexible CRLF)
+    const m1 = output.match(/---\s*GUION ACTUALIZADO\s*---\s*[\r\n]+([\s\S]*?)[\r\n]+---\s*FIN GUION\s*---/i)
+    if (m1) return m1[1].trim()
+
+    // Strategy 2: legacy orchestrator format "GUION FINAL:\n...\n---"
+    const m2 = output.match(/GUION FINAL:\s*[\r\n]+([\s\S]*?)(?:[\r\n]+---|\s*$)/i)
+    if (m2 && m2[1].trim().length > 50) return m2[1].trim()
+
+    // Strategy 3: raw output has script markers, strip editorial notes
+    if (/\[VOZ|\[PANTALLA|\[TEXTO/i.test(output)) {
+        const notasIdx = output.search(/NOTAS DE EDICI[ÓO]N/i)
+        return notasIdx > 0 ? output.substring(0, notasIdx).trim() : output.trim()
+    }
+
+    return fallback
 }
