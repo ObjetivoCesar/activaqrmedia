@@ -1,0 +1,143 @@
+# ADN ActivaQR.com — Documento Base v2
+
+---
+
+## ¿Qué es ActivaQR?
+
+ActivaQR.com genera un **contacto digital instalable** directamente en la agenda del teléfono de tus clientes. No es un enlace. No es una página web. No es un QR que abre WhatsApp. No es un PDF. No es una tarjeta digital que vive en internet.
+
+Es un archivo basado en vCard 3.0 que se instala en el teléfono y queda guardado como un contacto real — con foto, con logo, con toda la información del negocio. El QR es dinámico: si el negocio cambia de número, se actualiza el contacto y el mismo QR impreso sigue funcionando.
+
+**¿Qué contiene ese contacto?**
+Nombre del negocio y del contacto, logo de la empresa, descripción (mix entre propuesta de valor, misión y visión), productos y servicios, etiquetas de búsqueda, mapa de ubicación, perfil de Google My Business, teléfonos, correos, redes sociales.
+
+**¿Cómo llega al teléfono del cliente?**
+El negocio recibe un código QR y un archivo. El cliente escanea, descargas, hace clic en "importar", confirma "guardar". Listo. En 30 segundos el negocio quedó instalado en su agenda. Lo que hacerlo manualmente tomaría 20 minutos — y que en la práctica nadie haría.
+
+**El plus que pocos consideran al comprar:**
+Al quedar guardado en la agenda, el cliente empieza a ver los estados de WhatsApp del negocio. Presencia constante, sin pagar publicidad, sin hacer nada adicional.
+
+---
+
+## El problema que resuelve
+
+La memoria humana es imperfecta y los teléfonos están llenos de contactos pobres.
+
+Cuando conocemos a alguien útil, lo guardamos con lo mínimo: nombre y una característica. "Jorge mecánico." "Pedro maestro." "La señora del pastel." Funciona mientras el contexto está fresco. El problema aparece semanas o meses después, cuando alguien nos pide una recomendación.
+
+Abres tu teléfono y encuentras ocho "maestros", cuatro "Jorge", tres contactos sin apellido y ninguna foto. ¿Cuál era el bueno? No lo recuerdas con certeza. Recomiendas al que aparece primero. El maestro que realmente merecía ese trabajo lo perdió — no porque fallara, sino porque no estaba bien guardado.
+
+Ese trabajo se lo llevó otro. Y no fue culpa de quien guardó el contacto — fue culpa de no haber eliminado esa fricción desde el principio.
+
+**El negocio que usa ActivaQR aparece con foto, con nombre, con descripción de lo que hace. Se reconoce. Se recomienda con confianza. Llega más trabajo.**
+
+---
+
+## Casos de uso reales
+
+**Consultorio odontológico**
+Dos doctores, una recepcionista. Tres contactos digitales con logo del consultorio, nombre del doctor o área, dirección y perfil de Google Maps para que los pacientes dejen reseñas. Cuando un paciente recomienda el consultorio, abre su agenda, encuentra el contacto con foto, lo comparte. Profesional, instantáneo.
+
+**Empresa de productos de limpieza**
+Cuatro vendedores en campo. Cada uno con su contacto digital corporativo: logo de la empresa, nombre del vendedor, catálogo resumido, etiquetas ("limpieza industrial", "desengrasantes", "productos para hoteles"). Cuando un gerente de compras busca proveedor seis meses después, escribe la palabra clave en su agenda. Aparece el vendedor. Con foto. Reconocible.
+
+**Florería o boutique**
+Una sola dueña. Su contacto incluye el nombre del local, especialidades, ubicación, Instagram. Cuando una clienta está en una reunión y alguien pregunta dónde conseguir arreglos para una boda — abre su teléfono, busca "flores", aparece la boutique con foto. Se la comparte a todas en el grupo. La dueña nunca supo que esa noche ganó tres clientes nuevos.
+
+**Gabinete de estética o salón de belleza**
+La colorista que hizo el mejor trabajo que recuerdas. La buscas meses después para recomendarla. Sin ActivaQR: "Susy estética", sin foto, sin dirección, la recomendación muere. Con ActivaQR: foto, especialidades ("tintes", "keratina", "corte moderno"), dirección y teléfono. La recomendación llega completa.
+
+**Restaurante o negocio gastronómico**
+Antes entregaban volantes que terminaban en el suelo. Ahora los clientes guardan el contacto directo para pedidos a domicilio. La recurrencia sube porque el negocio vive en su agenda, no en un papel olvidado.
+
+**Enfermería o salud a domicilio**
+Yessy, enfermera: "Muchos pacientes perdían mi número entre sus chats. Ahora, apenas los visito, escanean mi QR y aparezco primero en su agenda con mi foto." La confianza que genera una profesional de salud con contacto guardado correctamente vale más que cualquier anuncio.
+
+**Profesional independiente (construcción, estructuras metálicas, plomería, electricidad)**
+En una reunión alguien pregunta: "¿alguien conoce a alguien que haga estructuras metálicas?" La persona que te contrató hace un año abre su agenda, escribe "estructuras". Apareces. Con foto. Te envía el contacto. Conseguiste un trabajo sin hacer nada.
+
+---
+
+## Planes y precios
+
+Sin mensualidades. Pago anual, todo incluido — hosting, dominio, mantenimiento y actualizaciones.
+
+**Plan Profesional — $20/año**
+1 contacto digital. Ideal para profesionales independientes y dueños de negocio solos.
+
+**Plan Equipo — $80/año ($16 c/u)**
+5 contactos. Ideal para equipos de trabajo, consultorios con varios profesionales, negocios con vendedores en campo.
+
+**Plan Empresa — $140/año ($14 c/u)**
+10 contactos. Para franquicias, sucursales y empresas con múltiples puntos de contacto.
+
+**Ediciones del contacto:** 2 modificaciones gratuitas incluidas. A partir de la tercera, $2 por edición — el cliente ingresa su código y edita directamente.
+
+*Nota interna: cambiar en FAQ "renovación del 100%" por "renovación al mismo precio" — la redacción actual puede generar fricción innecesaria.*
+
+---
+
+## Lo que nos diferencia (y cómo rebatimos objeciones)
+
+**"Ya tengo un código QR"**
+Un QR es solo un puente — lleva a algún lado: un enlace, WhatsApp, una página. Nosotros no llevamos a ningún lado. Generamos un archivo que se instala. Vivimos en el teléfono del cliente, no en internet.
+
+**"Ya tengo página web / tarjeta digital / enlace"**
+Perfecto. Eso funciona cuando alguien te busca activamente y sabe cómo te llamas. Nosotros funcionamos cuando alguien que ya te conoce necesita encontrarte, recordarte o recomendarte. Son canales distintos — uno atrae, el otro retiene y activa.
+
+**"Las redes sociales me funcionan"**
+Para que te encuentren quienes no te conocen, sí. Pero quien ya trabajó contigo, ¿te va a buscar en Instagram o en su teléfono? En su teléfono. La pregunta es: ¿cómo estás guardado ahí?
+
+**"Lo tengo que pensar / consultar"**
+Generalmente significa miedo a equivocarse. Respuesta: ya viste cómo funciona — escaneas, descargas, importas, guardas. Si eso parece complicado, con gusto lo explico de nuevo. Pero no creo que sea el problema. El producto es simple. La inversión es mínima. Lo que estás evaluando es si lo que haces hoy es suficiente para que tus clientes te recuerden y te recomienden.
+
+---
+
+## Sistema de vendedores y comisiones
+
+ActivaQR no vende solo — construye una red de vendedores independientes con un modelo de comisiones escalonado diseñado para incentivar equipos, no individuos.
+
+**Escala de comisiones:**
+1 a 100 ventas → 30% ($6 por venta)
+101 a 299 ventas → 40% ($8 por venta)
+300 ventas en adelante → 50% ($10 por venta)
+
+La meta no es llegar a 300. Es construir un equipo que te mantenga arriba de 300 de forma sostenida.
+
+**¿Cómo funciona el modelo de equipo?**
+Un vendedor firma contrato, recibe su panel de control, materiales de marketing (videos, posts, guiones) y sale a vender. Puede reclutar subvendedores. A sus subvendedores les paga el 30% base ($6/venta), independientemente del nivel en que él esté. La diferencia entre su comisión por escala y ese 30% base es su ganancia como líder.
+
+Ejemplo: vendedor en 50%, equipo de 5 subvendedores que venden 30 cada uno = 150 ventas del equipo. Él cobra $10 por cada una ($1,500), les paga $6 a cada subvendedor ($900 total). Ganancia neta del equipo: $600. Sumado a sus ventas propias, puede llegar a $2,100 o más de liquidez mensual.
+
+**Requisito mínimo para comisionar sobre el equipo:** 30 ventas propias. Sin ese piso, solo comisiona el 30% individual.
+
+**Independización:** cuando un subvendedor supera las 300 ventas, se independiza — arranca de cero como vendedor líder y puede abrir su propio equipo. Si alguien vende más que todo su equipo junto, ya no tiene sentido que sea subvendedor.
+
+**Panel de control y CRM de campo:**
+Cada vendedor tiene un punto de venta en su teléfono. Al terminar una visita: toma foto del local, registra tipo de negocio, con quién habló, resultado (cerró / no cerró / objeciones), y guarda. Al guardar se registra la geolocalización. Esto permite a ActivaQR dar feedback específico por tipo de objeción y construir material de capacitación en tiempo real.
+
+**Sistema de pagos:**
+Cada vendedor y subvendedor registra su cuenta bancaria. Los pagos se hacen directamente desde ActivaQR a las cuentas registradas. Sistema de doble notificación: cuando se paga a un subvendedor, le llega confirmación tanto a él como al vendedor líder. El vendedor aprueba los pagos — puede haber ventas fiadas que él cubrió en efectivo, por lo que necesita visibilidad y control antes de que se procese el pago automático.
+
+---
+
+## El modelo de negocio y la confianza
+
+ActivaQR es desarrollado por César Reyes, empresa de desarrollo de software verificable. El contacto digital es un producto de entrada — bajo costo, alto valor percibido — pensado para iniciar una relación comercial con negocios que eventualmente necesitan más tecnología. La idea es convertirnos en el proveedor tecnológico del negocio, no solo vender un contacto.
+
+---
+
+## Lo que ActivaQR NO es
+
+No es una tarjeta de presentación digital. No es una página web. No es un enlace de bio. No es un QR genérico. No es un CRM. No es una app que hay que descargar.
+
+**Es el negocio guardado en el teléfono del cliente. Permanente. Reconocible. Compartible.**
+
+---
+### MARKETING SKILLS & FRAMEWORKS (Expert Knowledge)
+El sistema tiene acceso a frameworks avanzados de:
+- **Copywriting**: Estructuras de PAISA, AIDA, Quest y técnicas de edición de respuesta emocional.
+- **Psicología de Marketing**: Disparadores de escasez, autoridad, reciprocidad y anclaje mental.
+- **Contenido Social**: Optimización de ganchos (hooks) para retención y algoritmos de Reels/TikTok.
+
+*Este documento se inyecta como contexto del sistema en cada llamada a la API. No modificar sin autorización.*
