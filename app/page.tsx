@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { generateDraftAction, runLensAction, runOrchestratorAction, saveApprovedScript, generateVideoFrames } from './actions'
 import { extractVoiceScript, synthesizeVoiceOff, generateMusicPrompt, generateGeminiMusic } from './voice-actions'
+import { logout } from './login/actions'
 import { GEMINI_VOICES } from '@/lib/audio/voices'
 import { LENS_ORDER } from '@/lib/pipeline/lenses'
 import type { PipelineResult, LensResult } from '@/lib/pipeline/executor'
@@ -366,7 +367,17 @@ export default function Home() {
 
       <div className="relative max-w-3xl mx-auto space-y-6">
         {/* Header */}
-        <header className="text-center space-y-3 mb-8">
+        <header className="relative text-center space-y-3 mb-8 pt-4">
+          <button
+            onClick={() => logout()}
+            className="absolute top-0 right-0 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-lg text-xs font-medium text-neutral-400 hover:text-red-400 hover:border-red-900/50 hover:bg-red-950/20 transition-all flex items-center gap-2"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Salir
+          </button>
+
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-950/60 border border-violet-800/40 text-violet-400 text-xs font-semibold tracking-widest uppercase mb-2">
             ActivaQR.com
           </div>
