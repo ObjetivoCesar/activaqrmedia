@@ -1,8 +1,5 @@
 'use server'
 
-export const maxDuration = 300; // Allow max duration instead of defaulting to 10s/60s (if Pro account)
-// Note: We avoid 'edge' runtime for complex Node.js dependencies here (like Supabase Node pg client), but we extend the timeout.
-
 import {
     runPipeline,
     generateInitialDraft,

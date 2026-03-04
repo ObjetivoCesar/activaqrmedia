@@ -85,7 +85,9 @@ function LensBadge({ lens, verdict, status }: { lens: string; verdict?: string; 
 /* ── Main Page ──────────────────────────────────────────────────────────*/
 const MAX_IDEA_LENGTH = 1500
 
-export default function Home() {
+export const maxDuration = 300; // Allow 5 minutes for Vercel Serverless Functions on this route
+
+export default function PipelinePage() {
   // Pipeline state
   const [idea, setIdea] = useState('')
   const [duration, setDuration] = useState('30s')
