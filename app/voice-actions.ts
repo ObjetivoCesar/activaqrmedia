@@ -13,10 +13,10 @@ const DURATION_SECONDS: Record<string, number> = {
     '120s': 120,
 }
 
+// Disable file logging on Vercel
 function debugLog(msg: string) {
-    const logPath = path.join(process.cwd(), 'pipeline_debug.log')
     const time = new Date().toISOString()
-    fs.appendFileSync(logPath, `[${time}] ${msg}\n`)
+    console.log(`[VOICE] [${time}] ${msg}`)
 }
 
 export async function extractVoiceScript(

@@ -1,12 +1,10 @@
 import OpenAI from 'openai'
-import fs from 'fs'
-import path from 'path'
 import type { LLMAdapter, LLMRequestOptions, LLMResponse } from '../types'
 
+// Disable file logging on Vercel
 function debugLog(msg: string) {
-    const logPath = path.join(process.cwd(), 'pipeline_debug.log')
     const time = new Date().toISOString()
-    fs.appendFileSync(logPath, `[${time}] ${msg}\n`)
+    console.log(`[DEEPSEEK] [${time}] ${msg}`)
 }
 
 /**

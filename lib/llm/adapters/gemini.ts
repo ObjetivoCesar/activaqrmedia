@@ -1,12 +1,9 @@
 import { GoogleGenAI } from '@google/genai'
 import type { LLMAdapter, LLMRequestOptions, LLMResponse } from '../types'
-import fs from 'fs'
-import path from 'path'
-
+// Disable file logging on Vercel
 function debugLog(msg: string) {
-    const logPath = path.join(process.cwd(), 'pipeline_debug.log')
     const time = new Date().toISOString()
-    fs.appendFileSync(logPath, `[${time}] ${msg}\n`)
+    console.log(`[GEMINI] [${time}] ${msg}`)
 }
 
 /**
