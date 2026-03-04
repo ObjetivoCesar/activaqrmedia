@@ -1,5 +1,7 @@
 'use server'
 
+export const maxDuration = 120; // 2 minutes for TTS Voice generation
+
 import OpenAI from 'openai'
 import { GoogleGenAI } from '@google/genai'
 import fs from 'fs'
