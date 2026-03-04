@@ -20,7 +20,7 @@ async function test() {
         });
         console.log('✅ Pipeline Success!');
         console.log('Final Script Length:', result.finalScript.length);
-    } catch (err) {
+    } catch (err: any) {
         console.error('❌ Pipeline Failed with Error:');
         console.error(err.message);
         if (err.stack) console.error(err.stack);

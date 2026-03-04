@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { generateDraftAction, runLensAction, runOrchestratorAction, saveApprovedScript, generateVideoFrames } from './actions'
+import { generateDraftAction, runLensAction, runOrchestratorAction, saveFullPipelineAction, generateVideoFrames, generateScript } from './actions'
+import { formatPipelineForExport } from '@/lib/utils/export'
 import { extractVoiceScript, synthesizeVoiceOff, generateMusicPrompt, generateGeminiMusic } from './voice-actions'
+
 import { logout } from './login/actions'
 import { GEMINI_VOICES } from '@/lib/audio/voices'
 import { LENS_ORDER } from '@/lib/pipeline/lenses'
@@ -200,98 +202,59 @@ export default function Home() {
     setLensStatuses(initialStatuses)
 
     try {
-      // PHASE 1: Initial Draft
-      setPipelinePhase('Generando borrador técnico inicial (v0)...')
-      const draftRes = await generateDraftAction(idea, { duration, style, preferredProvider: llmProvider })
-      if (!draftRes.success) throw new Error(draftRes.error || 'Error en borrador inicial')
+      // PHASE 4: Run full consensus pipeline (On Server)
+      setPipelinePhase('Ejecutando Pipeline de Consenso (6 Expertos + Orquestador)...')
 
-      let currentScript = draftRes.draft || ''
-      setResult({ scriptId: `v0_${Date.now()}`, finalScript: currentScript, lensResults: [], currentVersion: 0, versions: [], scriptOptions: [] })
+      const res = await generateScript(idea, { duration, style })
 
-      // PHASE 2: Parallel Expert Critique
-      const critiques: any[] = []
-      const expertLenses = LENS_ORDER.filter(id => id !== 'lens_orchestrator' && id !== 'lens_buyer_persona')
+      if (res.success && res.data) {
+        setResult(res.data)
 
-      for (const lensId of expertLenses) {
-        setPipelinePhase(`Mesa de Discusión: ${lensId.replace('lens_', '').toUpperCase()} analizando v0...`)
-        setLensStatuses((prev: any) => ({ ...prev, [lensId]: { status: 'loading' } }))
-
-        const res = await runLensAction(lensId, currentScript, llmProvider)
-
-        if (!res.success || !('verdict' in res)) {
-          setLensStatuses((prev: any) => ({ ...prev, [lensId]: { status: 'error' } }))
-          throw new Error(res.error || `Error en experto ${lensId}`)
-        }
-
-        critiques.push({ lens: lensId, verdict: res.verdict as any, feedback: res.feedback as any, tokensUsed: 0 })
-        setLensStatuses((prev: any) => ({ ...prev, [lensId]: { status: 'done', verdict: res.verdict } }))
-        setResult((prev: any) => prev ? { ...prev, lensResults: [...critiques] } : null)
+        // Update lens statuses for the UI semáforo
+        const newStatuses: any = { ...lensStatuses }
+        res.data.lensResults.forEach((lr: any) => {
+          newStatuses[lr.lens] = { status: 'done', verdict: lr.verdict }
+        })
+        setLensStatuses(newStatuses)
+        setActiveOption(0)
+        setPipelinePhase('Pipeline completado con éxito. ✨')
+      } else {
+        throw new Error(res.error || 'Error en el pipeline')
       }
-
-      // PHASE 3: Triple Orchestration (The 3-Option Bomb)
-      setPipelinePhase('El Orquestador generando 3 variantes...')
-      setLensStatuses((prev: any) => ({ ...prev, lens_orchestrator: { status: 'loading' } }))
-
-      const directions: Array<'classic' | 'conversion' | 'storytelling'> = ['classic', 'conversion', 'storytelling']
-      const scriptOptions: string[] = []
-      let firstOrchResult: any = null
-
-      for (const dir of directions) {
-        setPipelinePhase(`Orquestando variante: ${dir.toUpperCase()}...`)
-        const orchRes = await runOrchestratorAction(currentScript, critiques, dir, llmProvider)
-
-        if (!orchRes.success) {
-          setLensStatuses((prev: any) => ({ ...prev, lens_orchestrator: { status: 'error' } }))
-          throw new Error(orchRes.error || `Error en orquestación ${dir}`)
-        }
-
-        const updatedBody = (orchRes as any).updatedScript || currentScript
-        scriptOptions.push(updatedBody)
-
-        if (dir === 'classic') {
-          firstOrchResult = orchRes
-          currentScript = updatedBody
-        }
-      }
-
-      // @ts-ignore
-      setLensStatuses((prev: any) => ({ ...prev, lens_orchestrator: { status: 'done', verdict: firstOrchResult.verdict } }))
-      setResult({
-        scriptId: `script_${Date.now()}`,
-        finalScript: currentScript,
-        lensResults: [...critiques, { lens: 'lens_orchestrator', verdict: firstOrchResult.verdict, feedback: firstOrchResult.feedback, tokensUsed: firstOrchResult.tokensUsed || 0 }],
-        currentVersion: 1,
-        versions: [],
-        scriptOptions
-      })
-      setActiveOption(0)
-
-      // PHASE 4: Buyer Persona Validation
-      setPipelinePhase('Validación final por Auditores de Mercado...')
-      setLensStatuses((prev: any) => ({ ...prev, lens_buyer_persona: { status: 'loading' } }))
-
-      const auditRes = await runLensAction('lens_buyer_persona', currentScript, llmProvider)
-      if (!auditRes.success) {
-        setLensStatuses((prev: any) => ({ ...prev, lens_buyer_persona: { status: 'error' } }))
-        throw new Error(auditRes.error || 'Error en auditoría')
-      }
-
-      // @ts-ignore
-      setLensStatuses((prev: any) => ({ ...prev, lens_buyer_persona: { status: 'done', verdict: (auditRes as any).verdict } }))
-      setResult((prev: any) => prev ? {
-        ...prev,
-        lensResults: [...prev.lensResults, { lens: 'lens_buyer_persona', verdict: (auditRes as any).verdict, feedback: (auditRes as any).feedback, tokensUsed: (auditRes as any).tokensUsed || 0 }]
-      } : null)
-
-      setPipelinePhase('Pipeline de Consenso completado con éxito. ✨')
     } catch (err: any) {
       setError(err.message || 'Error inesperado.')
       setPipelinePhase('⚠️ Pipeline detenido. Ver error arriba.')
-      // Note: partial state (expert critiques) is preserved in `result` so user can see what was completed
     } finally {
       setLoading(false)
     }
   }
+
+
+  const handleSaveAll = async () => {
+    if (!result || !idea) return
+    setLoading(true)
+    setPipelinePhase('Guardando todo en la base de datos...')
+    const res = await saveFullPipelineAction(idea, result)
+    if (res.success) {
+      setPipelinePhase('¡Todo guardado correctamente! ✅')
+    } else {
+      setError(res.error || 'Error al guardar.')
+    }
+    setLoading(false)
+  }
+
+  const handleExport = () => {
+    if (!result || !idea) return
+    const content = formatPipelineForExport(idea, result)
+    const blob = new Blob([content], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `guion-produccion-${Date.now()}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
 
   const handleGenerateFrames = async () => {
     if (!selectedStyle) return
@@ -543,7 +506,41 @@ export default function Home() {
                 ))}
               </div>
             </div>
+
+            {/* Buyer Persona Summary if approved */}
+            {result?.checklistResults && (
+              <div className="mt-6 p-4 bg-emerald-950/20 border border-emerald-800/30 rounded-xl space-y-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-400">✅ Verificación de Mercado (Auditores)</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[result.checklistResults.profile1, result.checklistResults.profile2, result.checklistResults.profile3, result.checklistResults.profile4].map((p, i) => (
+                    <div key={i} className="text-center p-2 bg-neutral-900/60 rounded-lg border border-neutral-800">
+                      <p className="text-[9px] font-bold text-neutral-500 truncate mb-1">{p.name}</p>
+                      <span className="text-xs">{p.passed ? '🟢' : '🔴'}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[10px] text-neutral-400 italic">El guion ha sido validado por 4 perfiles de clientes potenciales.</p>
+              </div>
+            )}
+
+            {/* Final Actions: Save and Export */}
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleSaveAll}
+                disabled={loading}
+                className="flex-1 py-3 px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold rounded-xl text-sm transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] flex items-center justify-center gap-2"
+              >
+                {loading ? <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white/20 border-t-white" /> : '💾 Guardar Todo en BD'}
+              </button>
+              <button
+                onClick={handleExport}
+                className="flex-1 py-3 px-4 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold rounded-xl text-sm border border-neutral-700 transition-all flex items-center justify-center gap-2"
+              >
+                📄 Exportar para Producción
+              </button>
+            </div>
           </section>
+
         )}
 
         {/* ── STEP 3: Visual Style ──────────────────────────────────────── */}

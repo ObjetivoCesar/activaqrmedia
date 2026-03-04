@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎬 Expert Lens Pipeline™ — ActivaQR.com
 
-## Getting Started
+Pipeline privado para generación de guiones de video con IA. Desarrollado exclusivamente para uso interno de ActivaQR.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🔐 Acceso
+
+**URL Local:** http://localhost:3000  
+**URL Producción (Vercel):** *(ver Vercel Project URL)*
+
+### Usuario administrador
+| Campo | Valor |
+|:------|:------|
+| **Email** | `reyescesarenloja@gmail.com` |
+| **User UID** | `8e0c80dc-e901-46dd-85ea-b2de11cb1189` |
+| **Contraseña** | *(Establecida via "Send password recovery" en Supabase → Authentication → Users)* |
+
+> **Si olvidas la contraseña:** Ve a Supabase → Authentication → Users → Click en el usuario → "Send password recovery". Recibirás un email en `reyescesarenloja@gmail.com`.
+
+---
+
+## ⚙️ Variables de Entorno
+
+Copia estas variables en Vercel → **Settings → Environment Variables**:
+
+```env
+# Supabase (obtener de: supabase.com → Project Settings → API)
+NEXT_PUBLIC_SUPABASE_URL=tu_url_de_proyecto
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_anon_key
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key   ← SECRETO, nunca exponer
+
+# APIs de IA (obtener de sus respectivos paneles)
+GOOGLE_AI_API_KEY=tu_google_ai_key      # Google AI Studio
+DEEPSEEK_API_KEY=tu_deepseek_key        # platform.deepseek.com
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+> **Nota de seguridad:** `SUPABASE_SERVICE_ROLE_KEY` y `DEEPSEEK_API_KEY` son secretos. Nunca los incluyas en código o los compartas públicamente.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🗄️ Base de Datos (Supabase)
 
-## Learn More
+**Tablas principales:**
 
-To learn more about Next.js, take a look at the following resources:
+| Tabla | Contenido |
+|:------|:----------|
+| `scripts` | Guiones generados (idea, body, estado) |
+| `lens_results` | Observaciones de cada experto (Lente) del pipeline |
+| `checklist_results` | Evaluaciones de los 4 Buyer Personas |
+| `production_outputs` | Prompts de video, voz en off y música |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Para resetear/recrear las tablas:** Ejecuta el archivo `supabase/manual_setup.sql` en el Editor SQL de Supabase.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🚀 Desarrollo Local
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# 1. Instalar dependencias
+npm install
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# 2. Configurar variables (crear .env.local con las variables de arriba)
+
+# 3. Correr servidor de desarrollo
+npm run dev
+```
+
+## 🏗️ Build para Producción
+
+```bash
+npm run build
+```
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+app/
+  page.tsx          ← UI principal del Pipeline
+  actions.ts        ← Server Actions (generación + guardado en BD)
+  login/            ← Sistema de autenticación
+lib/
+  pipeline/
+    executor.ts     ← Orquestador del Pipeline (runPipeline)
+    lenses.ts       ← Definición de los 6 Lentes expertos
+    checklist.ts    ← Evaluación buyer personas
+    production-prompts.ts ← Prompts de video/voz/música
+  llm/              ← Adaptadores Gemini y DeepSeek
+  prompts/          ← Loader de prompts desde archivos .md
+  utils/
+    export.ts       ← Formateo para exportar a Google Docs
+prompts/            ← Archivos .md de prompts (editables sin tocar código)
+supabase/
+  manual_setup.sql  ← Script SQL para crear las tablas
+types/
+  database.ts       ← Tipos TypeScript para Supabase
+```

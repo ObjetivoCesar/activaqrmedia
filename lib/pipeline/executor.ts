@@ -2,6 +2,9 @@ import { getLLMProvider } from '@/lib/llm/provider'
 import { loadPrompt } from '@/lib/prompts/loader'
 import { LENS_ORDER, LENSES, type LensType } from './lenses'
 
+import { ChecklistResult } from './checklist'
+import { ProductionPackage } from './production-prompts'
+
 export interface LensResult {
     lens: string
     verdict: 'green' | 'yellow' | 'red'
@@ -16,7 +19,10 @@ export interface PipelineResult {
     finalScript: string
     currentVersion: number
     scriptOptions?: string[] // Las 3 bombas: Clásica, Conversión, Narrativa
+    checklistResults?: ChecklistResult
+    productionPrompts?: ProductionPackage
 }
+
 
 export interface RunPipelineOptions {
     scriptId: string
@@ -88,15 +94,28 @@ export async function runPipeline(options: RunPipelineOptions): Promise<Pipeline
         tokensUsed: auditResult.tokensUsed,
     })
 
+    // ── Paso 5: Checklist Detallado ──
+    console.log(`[PIPELINE] Corriendo checklist de buyer personas...`)
+    const { runChecklist } = await import('./checklist')
+    const checklistResults = await runChecklist(currentScript)
+
+    // ── Paso 6: Prompts de Producción ──
+    console.log(`[PIPELINE] Generando prompts de producción...`)
+    const { generateProductionPrompts } = await import('./production-prompts')
+    const productionPrompts = await generateProductionPrompts(currentScript)
+
     return {
         scriptId,
         versions,
         lensResults,
         finalScript: currentScript,
         currentVersion: currentVersion + 1,
-        scriptOptions
+        scriptOptions,
+        checklistResults,
+        productionPrompts
     }
 }
+
 
 export async function runOrchestratorPass(
     v0Script: string,

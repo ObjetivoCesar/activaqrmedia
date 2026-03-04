@@ -45,8 +45,11 @@ export async function generateScript(idea: string, options: { duration: string, 
     try {
         validateIdea(idea)
         debugLog(`generateScript: ${idea.substring(0, 30)}...`)
+        // Use a temporary UUID-like string or real UUID for the pipeline logic
+        const tempId = crypto.randomUUID()
+
         const result = await withTimeout(
-            runPipeline({ scriptId: `script_${Date.now()}`, idea, duration: options.duration, style: options.style }),
+            runPipeline({ scriptId: tempId, idea, duration: options.duration, style: options.style }),
             300_000, // 5 min max
             'Pipeline completo'
         )
@@ -118,20 +121,82 @@ export async function runOrchestratorAction(
     }
 }
 
-export async function saveApprovedScript(idea: string, scriptContent: string): Promise<{ success: boolean; error?: string }> {
+export async function saveFullPipelineAction(idea: string, result: PipelineResult): Promise<{ success: boolean; scriptId?: string; error?: string }> {
     try {
         const supabase = getSupabaseServiceClient()
-        // @ts-ignore - Supabase type pending migration
-        const { error } = await supabase
-            .from('approved_scripts')
-            .insert([{ idea, script_content: scriptContent }] as any)
-        if (error) throw error
-        return { success: true }
+
+        // 1. Guardar el guion principal
+        const { data: scriptData, error: scriptError } = await (supabase
+            .from('scripts' as any) as any)
+            .insert([{
+                title: idea.substring(0, 50),
+                original_idea: idea,
+                current_body: result.finalScript,
+                status: 'approved',
+                version: result.currentVersion,
+            }])
+            .select()
+            .single()
+
+        if (scriptError) throw scriptError
+        const scriptId = (scriptData as any).id
+
+        // 2. Guardar resultados de los lentes
+        const lensInserts = result.lensResults.map(lr => ({
+            script_id: scriptId,
+            version: result.currentVersion,
+            lens: lr.lens,
+            verdict: lr.verdict,
+            feedback: lr.feedback,
+            tokens_used: lr.tokensUsed
+        }))
+
+        const { error: lensError } = await (supabase
+            .from('lens_results' as any) as any)
+            .insert(lensInserts)
+
+        if (lensError) throw lensError
+
+        // 3. Guardar checklist si existe
+        if (result.checklistResults) {
+            const { error: checklistError } = await (supabase
+                .from('checklist_results' as any) as any)
+                .insert([{
+                    script_id: scriptId,
+                    version: result.currentVersion,
+                    profile_1: result.checklistResults.profile1,
+                    profile_2: result.checklistResults.profile2,
+                    profile_3: result.checklistResults.profile3,
+                    profile_4: result.checklistResults.profile4,
+                    overall_pass: result.checklistResults.overallPass,
+                    raw_output: result.checklistResults.rawOutput
+                }])
+
+            if (checklistError) throw checklistError
+        }
+
+        // 4. Guardar prompts de producción si existen
+        if (result.productionPrompts) {
+            const { error: prodError } = await (supabase
+                .from('production_outputs' as any) as any)
+                .insert([{
+                    script_id: scriptId,
+                    video_prompts: result.productionPrompts.videoPrompts,
+                    voice_prompt: result.productionPrompts.voicePrompt,
+                    music_prompt: result.productionPrompts.musicPrompt
+                }])
+
+            if (prodError) throw prodError
+        }
+
+        return { success: true, scriptId }
     } catch (error: any) {
-        console.error('Error guardando guion:', error)
-        return { success: false, error: error.message || 'No se pudo guardar el guion.' }
+        console.error('[ACTIONS] saveFullPipelineAction Error:', error)
+        return { success: false, error: error.message || 'Error al guardar el pipeline completo.' }
     }
 }
+
+
 
 export async function generateVideoFrames(script: string, stylePrompt: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
     try {

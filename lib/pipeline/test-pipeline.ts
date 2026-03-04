@@ -29,7 +29,9 @@ El objetivo es que guarden mi contacto escaneando mi código ActivaQR que pondr�
 
         const result = await runPipeline({
             scriptId: 'test-local-script-123',
-            idea
+            idea,
+            duration: '60 segundos',
+            style: 'Cinemático'
         })
 
         const endTime = Date.now()
