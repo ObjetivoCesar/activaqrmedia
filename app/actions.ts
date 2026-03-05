@@ -299,3 +299,69 @@ Render the visual concept using the SELECTED VISUAL STYLE as your aesthetic lang
         return { success: false, error: error.message }
     }
 }
+
+// ── History & Retrieval ───────────────────────────────────────────────────
+
+export async function getSavedPipelinesAction() {
+    try {
+        const supabase = getSupabaseServiceClient()
+        const { data, error } = await supabase
+            .from('scripts')
+            .select('id, title, original_idea, created_at')
+            .order('created_at', { ascending: false })
+            .limit(20)
+
+        if (error) throw error
+        return { success: true, scripts: data }
+    } catch (err: any) {
+        console.error('[ACTIONS] getSavedPipelinesAction Error:', err)
+        return { success: false, error: err.message }
+    }
+}
+
+export async function getPipelineDetailsAction(scriptId: string): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+        const supabase = getSupabaseServiceClient()
+
+        // 1. Fetch script metadata
+        const { data: scriptData, error: scriptError } = await supabase
+            .from('scripts')
+            .select('*')
+            .eq('id', scriptId)
+            .single()
+
+        if (scriptError) throw scriptError
+
+        // 2. Fetch lens results
+        const { data: lensData, error: lensError } = await supabase
+            .from('lens_results')
+            .select('*')
+            .eq('script_id', scriptId)
+            .order('run_at', { ascending: true })
+
+        if (lensError) throw lensError
+
+        // 3. Fetch production outputs
+        const { data: prodData, error: prodError } = await supabase
+            .from('production_outputs')
+            .select('*')
+            .eq('script_id', scriptId)
+            .single()
+        // Error is fine here since old scripts might not have prod output
+        if (prodError && prodError.code !== 'PGRST116') {
+            console.error('[ACTIONS] Error fetching production outputs:', prodError)
+        }
+
+        return {
+            success: true,
+            data: {
+                script: scriptData,
+                lensResults: lensData || [],
+                productionOutputs: prodData || null
+            }
+        }
+    } catch (err: any) {
+        console.error('[ACTIONS] getPipelineDetailsAction Error:', err)
+        return { success: false, error: err.message }
+    }
+}

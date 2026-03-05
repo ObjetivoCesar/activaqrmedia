@@ -7,7 +7,9 @@ import {
   runOrchestratorAction,
   saveFullPipelineAction,
   generateVideoFrames,
-  generateProductionPromptsAction
+  generateProductionPromptsAction,
+  getSavedPipelinesAction,
+  getPipelineDetailsAction
 } from './actions'
 import { formatPipelineForExport } from '@/lib/utils/export'
 import { extractVoiceScript, synthesizeVoiceOff, generateMusicPrompt, generateGeminiMusic } from './voice-actions'
@@ -115,6 +117,11 @@ export default function PipelinePage() {
   const [generatingGeminiMusic, setGeneratingGeminiMusic] = useState(false)
   const [productionData, setProductionData] = useState<any>(null)
 
+  // ── History state ──
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+  const [historyItems, setHistoryItems] = useState<any[]>([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+
   const [mounted, setMounted] = useState(false)
   const lensResultsRef = useRef(lensResults)
   lensResultsRef.current = lensResults
@@ -149,6 +156,109 @@ export default function PipelinePage() {
   // ── Initialize lens steps list ──
   const initLensSteps = (): LensStepState[] =>
     LENS_ORDER.map(id => ({ lensId: id, status: 'pending' as const, userOpinion: '' }))
+
+  // ── Fetch History ──
+  const handleOpenHistory = async () => {
+    setIsHistoryOpen(true)
+    if (historyItems.length === 0) {
+      setLoadingHistory(true)
+      const res = await getSavedPipelinesAction()
+      if (res.success && res.scripts) setHistoryItems(res.scripts)
+      setLoadingHistory(false)
+    }
+  }
+
+  // ── Load Script from History ──
+  const loadFromHistory = async (scriptId: string) => {
+    setIsRunning(true)
+    setError(null)
+    const res = await getPipelineDetailsAction(scriptId)
+    setIsRunning(false)
+
+    if (!res.success || !res.data) {
+      setError(res.error || 'No se pudo cargar el guion del historial.')
+      return
+    }
+
+    const { script, lensResults: savedLenses, productionOutputs } = res.data
+
+    // 1. Restore Idea and Form
+    setIdea(script.original_idea || '')
+    // Assuming defaults for duration/style since they aren't strictly saved in `scripts` table right now
+
+    // 2. We don't have the original intermediate draft, but we can mock it
+    setDraft('Este borrador inicial fue sobreescrito. Viendo resultados orquestados directos de base de datos.')
+
+    // 3. Reconstruct Lens Steps
+    // Supabase returns lenses ordered by run_at
+    const steps: LensStepState[] = LENS_ORDER.map(id => {
+      const savedLr = savedLenses.find((lr: any) => lr.lens === id)
+      if (savedLr) {
+        // Extract Director opinion if merged into feedback previously
+        const opinionMatch = savedLr.feedback.match(/\[OPINIÓN DEL DIRECTOR\]: ([\s\S]*)$/)
+        const userOpinion = opinionMatch ? opinionMatch[1].trim() : ''
+        const cleanFeedback = opinionMatch ? savedLr.feedback.replace(/\n\n\[OPINIÓN DEL DIRECTOR\][\s\S]*$/, '') : savedLr.feedback
+
+        return {
+          lensId: id,
+          status: 'done',
+          feedback: cleanFeedback,
+          verdict: savedLr.verdict as any,
+          userOpinion: userOpinion
+        }
+      }
+      return { lensId: id, status: 'pending', userOpinion: '' }
+    })
+
+    setLensSteps(steps)
+    setCurrentLensIdx(LENS_ORDER.length)
+
+    // Check Director notes
+    const directorLr = savedLenses.find((lr: any) => lr.lens === 'director_notes')
+    if (directorLr) {
+      const match = directorLr.feedback.match(/\[NOTA GLOBAL DEL DIRECTOR\]: ([\s\S]*)$/)
+      setDirectorNote(match ? match[1].trim() : '')
+    } else {
+      setDirectorNote('')
+    }
+
+    // 4. Set Final Scripts Options (From DB it's just one final script)
+    // To play nice with UI, we put it in option 0.
+    setScriptOptions([script.current_body])
+    setFinalScript(script.current_body)
+    setActiveOption(0)
+
+    // 5. Restore Production Outputs
+    if (productionOutputs) {
+      setFrames(productionOutputs.video_prompts || [])
+      setSunoPrompt(productionOutputs.music_prompt || '')
+      setVoiceScript(productionOutputs.voice_prompt || '')
+    } else {
+      setFrames([])
+      setSunoPrompt('')
+      setVoiceScript('')
+    }
+
+    // 6. Set Result object so Export/Save still works
+    setResult({
+      scriptId: script.id,
+      finalScript: script.current_body,
+      currentVersion: script.version,
+      scriptOptions: [script.current_body],
+      versions: [{ version: script.version, body: script.current_body, triggeredBy: 'restored_from_history' }],
+      lensResults: savedLenses,
+      productionPrompts: {
+        videoPrompts: productionOutputs?.video_prompts || [],
+        voicePrompt: productionOutputs?.voice_prompt || '',
+        musicPrompt: productionOutputs?.music_prompt || '',
+        tokensUsed: 0
+      }
+    })
+
+    // 7. Jump immediately to Done Phase
+    setPhase('done')
+    setIsHistoryOpen(false)
+  }
 
   // ── STEP 1: Generate draft ──
   const handleGenerateDraft = async (e: React.FormEvent) => {
@@ -409,15 +519,26 @@ export default function PipelinePage() {
 
         {/* ── Header ── */}
         <header className="relative text-center space-y-3 mb-8 pt-4">
-          <button
-            onClick={() => logout()}
-            className="absolute top-0 right-0 px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-lg text-xs font-medium text-neutral-400 hover:text-red-400 hover:border-red-900/50 hover:bg-red-950/20 transition-all flex items-center gap-2"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            Salir
-          </button>
+          <div className="absolute top-0 right-0 flex items-center gap-2">
+            <button
+              onClick={handleOpenHistory}
+              className="px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-lg text-xs font-medium text-neutral-400 hover:text-violet-400 hover:border-violet-900/50 hover:bg-violet-950/20 transition-all flex items-center gap-2"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Historial
+            </button>
+            <button
+              onClick={() => logout()}
+              className="px-3 py-1.5 bg-neutral-900 border border-neutral-800 rounded-lg text-xs font-medium text-neutral-400 hover:text-red-400 hover:border-red-900/50 hover:bg-red-950/20 transition-all flex items-center gap-2"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Salir
+            </button>
+          </div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-950/60 border border-violet-800/40 text-violet-400 text-xs font-semibold tracking-widest uppercase mb-2">
             ActivaQR.com
           </div>
@@ -936,6 +1057,49 @@ export default function PipelinePage() {
         )}
 
       </div>
+
+      {/* ── History Sidebar Overlay ── */}
+      {isHistoryOpen && (
+        <div className="fixed inset-0 z-50 flex justify-end">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsHistoryOpen(false)} />
+          <div className="relative w-full max-w-md bg-neutral-900 h-full border-l border-neutral-800 shadow-2xl flex flex-col slide-in-from-right animation-duration-300">
+            <div className="p-5 border-b border-neutral-800 flex items-center justify-between">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                <svg className="w-5 h-5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Historial de Proyectos
+              </h2>
+              <button onClick={() => setIsHistoryOpen(false)} className="text-neutral-400 hover:text-white p-2">✕</button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {loadingHistory ? (
+                <div className="flex justify-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-violet-500/30 border-t-violet-500" />
+                </div>
+              ) : historyItems.length === 0 ? (
+                <p className="text-center text-neutral-500 text-sm py-10">No hay proyectos guardados aún.</p>
+              ) : (
+                historyItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => loadFromHistory(item.id)}
+                    className="w-full text-left p-4 rounded-xl bg-neutral-950/50 border border-neutral-800/60 hover:border-violet-500/50 hover:bg-violet-950/20 transition-all group"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="font-bold text-sm text-neutral-200 group-hover:text-violet-300 truncate pr-2">{item.title}</p>
+                      <p className="text-[10px] text-neutral-500 whitespace-nowrap">{new Date(item.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <p className="text-xs text-neutral-500 line-clamp-2">{item.original_idea}</p>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   )
 }
