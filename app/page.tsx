@@ -1,7 +1,14 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { generateDraftAction, runLensAction, runOrchestratorAction, saveFullPipelineAction, generateVideoFrames } from './actions'
+import {
+  generateDraftAction,
+  runLensAction,
+  runOrchestratorAction,
+  saveFullPipelineAction,
+  generateVideoFrames,
+  generateProductionPromptsAction
+} from './actions'
 import { formatPipelineForExport } from '@/lib/utils/export'
 import { extractVoiceScript, synthesizeVoiceOff, generateMusicPrompt, generateGeminiMusic } from './voice-actions'
 import { logout } from './login/actions'
@@ -64,6 +71,7 @@ export default function PipelinePage() {
   const [duration, setDuration] = useState('30s')
   const [style, setStyle] = useState('retorical')
   const [llmProvider, setLlmProvider] = useState<'gemini' | 'deepseek'>('gemini')
+  const [seoKeywords, setSeoKeywords] = useState('')
 
   // ── Pipeline orchestration state ──
   const [phase, setPhase] = useState<PipelinePhase>('idle')
@@ -105,6 +113,7 @@ export default function PipelinePage() {
   const [generatingMusic, setGeneratingMusic] = useState(false)
   const [geminiMusicUrl, setGeminiMusicUrl] = useState<string | null>(null)
   const [generatingGeminiMusic, setGeneratingGeminiMusic] = useState(false)
+  const [productionData, setProductionData] = useState<any>(null)
 
   const [mounted, setMounted] = useState(false)
   const lensResultsRef = useRef(lensResults)
@@ -187,7 +196,8 @@ export default function PipelinePage() {
     setLensSteps([...steps])
 
     const lensId = steps[currentLensIdx].lensId
-    const res = await runLensAction(lensId, draft, llmProvider)
+    const context = lensId === 'lens_seo' ? seoKeywords : steps[currentLensIdx].userOpinion
+    const res = await runLensAction(lensId, draft, llmProvider, context)
 
     setIsRunning(false)
 
@@ -262,6 +272,10 @@ export default function PipelinePage() {
     setFinalScript(options[0])
     setActiveOption(0)
 
+    // Trigger production prompts generation in background or now
+    const prodRes = await generateProductionPromptsAction(options[0])
+    if (prodRes.success) setProductionData(prodRes.data)
+
     // Build full PipelineResult for save/export
     const pipelineResult: PipelineResult = {
       scriptId: crypto.randomUUID(),
@@ -270,6 +284,7 @@ export default function PipelinePage() {
       finalScript: options[0],
       currentVersion: 1,
       scriptOptions: options,
+      productionPrompts: prodRes.success ? prodRes.data : undefined
     }
     setResult(pipelineResult)
 
@@ -288,15 +303,32 @@ export default function PipelinePage() {
   const handleSaveAll = async () => {
     if (!result || !idea) return
     setIsRunning(true)
-    const res = await saveFullPipelineAction(idea, result)
+
+    // Ensure result reflect correctly the active option
+    const updatedResult = {
+      ...result,
+      finalScript: scriptOptions[activeOption] || result.finalScript,
+      productionPrompts: productionData || result.productionPrompts
+    }
+
+    const res = await saveFullPipelineAction(idea, updatedResult, {
+      frames: frames.length > 0 ? frames : undefined,
+      voicePrompt: voiceScript || undefined,
+      musicPrompt: sunoPrompt || undefined
+    })
+
     setIsRunning(false)
     if (!res.success) setError(res?.error || 'Error al guardar.')
-    else alert('¡Guardado en base de datos! ✅')
+    else alert('¡Guardado completo en base de datos! ✅ (Guion + Escenas + Música)')
   }
 
   const handleExport = () => {
     if (!result || !idea) return
-    const content = formatPipelineForExport(idea, result)
+    const content = formatPipelineForExport(idea, result, {
+      frames: frames.length > 0 ? frames : undefined,
+      voiceScript: voiceScript || undefined,
+      sunoPrompt: sunoPrompt || undefined
+    })
     const blob = new Blob([content], { type: 'text/markdown' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -337,21 +369,21 @@ export default function PipelinePage() {
   }
 
   const handleGenerateMusicPrompt = async () => {
-    const musicLens = result?.lensResults?.find((l: any) => l.lens === 'lens_music')
-    if (!musicLens?.feedback) { setError('No hay brief musical. Genera el guion completo primero.'); return }
+    const musicBrief = productionData?.musicPrompt || result?.productionPrompts?.musicPrompt
+    if (!musicBrief) { setError('No hay brief musical. Orquesta el guion primero.'); return }
     setGeneratingMusic(true); setError(null)
-    const res = await generateMusicPrompt(musicLens.feedback, duration)
+    const res = await generateMusicPrompt(musicBrief, duration)
     if (res.success) { setSunoPrompt(res.sunoPrompt || ''); setUdioPrompt(res.udioPrompt || ''); setMixNotes(res.mixNotes || '') }
     else setError(res.error || 'Error generando prompt de música.')
     setGeneratingMusic(false)
   }
 
   const handleGenerateGeminiMusic = async () => {
-    const musicLens = result?.lensResults?.find((l: any) => l.lens === 'lens_music')
-    if (!musicLens?.feedback) { setError('No hay brief musical.'); return }
+    const musicBrief = productionData?.musicPrompt || result?.productionPrompts?.musicPrompt
+    if (!musicBrief) { setError('No hay brief musical.'); return }
     setGeneratingGeminiMusic(true); setError(null)
     try {
-      const res = await generateGeminiMusic(musicLens.feedback)
+      const res = await generateGeminiMusic(musicBrief)
       if (res.success && res.audioBase64) setGeminiMusicUrl(`data:audio/wav;base64,${res.audioBase64}`)
       else setError(res.error || 'Error al generar música.')
     } catch (err: any) { setError(err.message) }
@@ -465,6 +497,19 @@ export default function PipelinePage() {
                 disabled={phase !== 'idle'}
                 placeholder="Ejemplo: Soy mecánica automotriz con 15 años de experiencia. Quiero un video para TikTok..."
                 className={`w-full bg-neutral-800 border rounded-xl px-4 py-3 text-sm text-neutral-100 placeholder:text-neutral-600 focus:outline-none transition-colors resize-none disabled:opacity-50 ${idea.length > MAX_IDEA_LENGTH * 0.9 ? 'border-amber-600/60 focus:border-amber-500' : 'border-neutral-700 focus:border-violet-500'}`}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-violet-400 flex items-center gap-1.5">
+                🔍 Keywords SEO (Palabras clave) <span className="text-neutral-600 normal-case font-normal">(Cuáles usar siempre / Cuáles son específicas)</span>
+              </label>
+              <textarea
+                rows={2} value={seoKeywords}
+                onChange={(e) => setSeoKeywords(e.target.value)}
+                disabled={phase !== 'idle'}
+                placeholder="Ej: ActivaQR, Marketing Digital, Reels, Innovación..."
+                className="w-full bg-neutral-800 border border-neutral-700 rounded-xl px-4 py-2 text-sm text-neutral-100 placeholder:text-neutral-600 focus:border-violet-500 focus:outline-none transition-colors resize-none disabled:opacity-50"
               />
             </div>
 

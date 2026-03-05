@@ -240,7 +240,8 @@ export async function generateInitialDraft(options: {
 export async function runLensPass(
     lensId: LensType,
     currentScript: string,
-    preferredProvider?: string
+    preferredProvider?: string,
+    context?: string
 ): Promise<{
     updatedScript: string,
     verdict: 'green' | 'yellow' | 'red',
@@ -261,9 +262,10 @@ export async function runLensPass(
                     content: [
                         lensPrompt,
                         '---',
+                        context ? `CONTEXTO ADICIONAL DEL DIRECTOR:\n${context}\n---` : '',
                         'GUION ACTUAL (versión a evaluar):',
                         currentScript,
-                    ].join('\n\n'),
+                    ].filter(Boolean).join('\n\n'),
                 },
             ],
             modelLevel: lensConfig.modelLevel || 'advanced',

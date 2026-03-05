@@ -83,17 +83,31 @@ export async function generateDraftAction(
 /**
  * Acción granular: Aplica un lente específico.
  */
-export async function runLensAction(lensId: string, currentScript: string, preferredProvider?: string) {
+export async function runLensAction(lensId: string, currentScript: string, preferredProvider?: string, context?: string) {
     try {
         debugLog(`runLensAction: ${lensId} (${preferredProvider || 'default'})`)
         const result = await withTimeout(
-            runLensPass(lensId as LensType, currentScript, preferredProvider),
+            runLensPass(lensId as LensType, currentScript, preferredProvider, context),
             90_000, // 1.5 min max per lens
             `Lente ${lensId}`
         )
         return { success: true, ...result }
     } catch (error: any) {
         debugLog(`runLensAction ERROR: ${error.message}`)
+        return { success: false, error: error.message }
+    }
+}
+
+/**
+ * Genera prompts de producción (voz, música, video) de forma aislada.
+ */
+export async function generateProductionPromptsAction(script: string) {
+    try {
+        const { generateProductionPrompts } = await import('@/lib/pipeline/production-prompts')
+        const data = await generateProductionPrompts(script)
+        return { success: true, data }
+    } catch (error: any) {
+        debugLog(`generateProductionPromptsAction ERROR: ${error.message}`)
         return { success: false, error: error.message }
     }
 }
@@ -121,7 +135,15 @@ export async function runOrchestratorAction(
     }
 }
 
-export async function saveFullPipelineAction(idea: string, result: PipelineResult): Promise<{ success: boolean; scriptId?: string; error?: string }> {
+export async function saveFullPipelineAction(
+    idea: string,
+    result: PipelineResult,
+    extra?: {
+        frames?: any[],
+        voicePrompt?: string,
+        musicPrompt?: string
+    }
+): Promise<{ success: boolean; scriptId?: string; error?: string }> {
     try {
         const supabase = getSupabaseServiceClient()
 
@@ -142,20 +164,22 @@ export async function saveFullPipelineAction(idea: string, result: PipelineResul
         const scriptId = (scriptData as any).id
 
         // 2. Guardar resultados de los lentes
-        const lensInserts = result.lensResults.map(lr => ({
-            script_id: scriptId,
-            version: result.currentVersion,
-            lens: lr.lens,
-            verdict: lr.verdict,
-            feedback: lr.feedback,
-            tokens_used: lr.tokensUsed
-        }))
+        if (result.lensResults && result.lensResults.length > 0) {
+            const lensInserts = result.lensResults.map(lr => ({
+                script_id: scriptId,
+                version: result.currentVersion,
+                lens: lr.lens,
+                verdict: lr.verdict,
+                feedback: lr.feedback,
+                tokens_used: lr.tokensUsed
+            }))
 
-        const { error: lensError } = await (supabase
-            .from('lens_results' as any) as any)
-            .insert(lensInserts)
+            const { error: lensError } = await (supabase
+                .from('lens_results' as any) as any)
+                .insert(lensInserts)
 
-        if (lensError) throw lensError
+            if (lensError) throw lensError
+        }
 
         // 3. Guardar checklist si existe
         if (result.checklistResults) {
@@ -175,15 +199,19 @@ export async function saveFullPipelineAction(idea: string, result: PipelineResul
             if (checklistError) throw checklistError
         }
 
-        // 4. Guardar prompts de producción si existen
-        if (result.productionPrompts) {
+        // 4. Guardar prompts de producción y frames
+        const videoPrompts = extra?.frames || result.productionPrompts?.videoPrompts
+        const voicePrompt = extra?.voicePrompt || result.productionPrompts?.voicePrompt
+        const musicPrompt = extra?.musicPrompt || result.productionPrompts?.musicPrompt
+
+        if (videoPrompts || voicePrompt || musicPrompt) {
             const { error: prodError } = await (supabase
                 .from('production_outputs' as any) as any)
                 .insert([{
                     script_id: scriptId,
-                    video_prompts: result.productionPrompts.videoPrompts,
-                    voice_prompt: result.productionPrompts.voicePrompt,
-                    music_prompt: result.productionPrompts.musicPrompt
+                    video_prompts: videoPrompts,
+                    voice_prompt: voicePrompt,
+                    music_prompt: musicPrompt
                 }])
 
             if (prodError) throw prodError
