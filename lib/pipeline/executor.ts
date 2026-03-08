@@ -4,6 +4,7 @@ import { LENS_ORDER, LENSES, type LensType } from './lenses'
 
 import { ChecklistResult } from './checklist'
 import { ProductionPackage } from './production-prompts'
+import { generateVisualOpening, SuggestedVisualOpening, ContentStyle, VISUAL_HOOKS } from './visual-hooks'
 
 export interface LensResult {
     lens: string
@@ -21,6 +22,7 @@ export interface PipelineResult {
     scriptOptions?: string[] // Las 3 bombas: Clásica, Conversión, Narrativa
     checklistResults?: ChecklistResult
     productionPrompts?: ProductionPackage
+    visualHook?: SuggestedVisualOpening
 }
 
 
@@ -104,6 +106,20 @@ export async function runPipeline(options: RunPipelineOptions): Promise<Pipeline
     const { generateProductionPrompts } = await import('./production-prompts')
     const productionPrompts = await generateProductionPrompts(currentScript)
 
+    // ── Paso 7: Hook Visual Sugerido ──
+    console.log(`[PIPELINE] Sugiriendo Hook Visual...`)
+    // Map unstructured style string to our internal enum if possible, otherwise use a fallback
+    const styleLower = style.toLowerCase()
+    let mappedStyle: ContentStyle = 'vlog'
+    if (styleLower.includes('educa') || styleLower.includes('enseña')) mappedStyle = 'educativo'
+    else if (styleLower.includes('historia') || styleLower.includes('story')) mappedStyle = 'storytelling'
+    else if (styleLower.includes('tuto') || styleLower.includes('paso')) mappedStyle = 'tutorial'
+    else if (styleLower.includes('opini') || styleLower.includes('reac')) mappedStyle = 'opinion'
+    else if (styleLower.includes('emo') || styleLower.includes('inspi')) mappedStyle = 'emocional'
+    else if (styleLower.includes('tec') || styleLower.includes('pro')) mappedStyle = 'tecnico'
+
+    const visualHook = generateVisualOpening(mappedStyle)
+
     return {
         scriptId,
         versions,
@@ -112,7 +128,8 @@ export async function runPipeline(options: RunPipelineOptions): Promise<Pipeline
         currentVersion: currentVersion + 1,
         scriptOptions,
         checklistResults,
-        productionPrompts
+        productionPrompts,
+        visualHook
     }
 }
 

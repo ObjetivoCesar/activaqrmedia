@@ -199,19 +199,21 @@ export async function saveFullPipelineAction(
             if (checklistError) throw checklistError
         }
 
-        // 4. Guardar prompts de producción y frames
+        // 4. Guardar prompts de producción, frames y visual hook
         const videoPrompts = extra?.frames || result.productionPrompts?.videoPrompts
         const voicePrompt = extra?.voicePrompt || result.productionPrompts?.voicePrompt
         const musicPrompt = extra?.musicPrompt || result.productionPrompts?.musicPrompt
+        const visualHook = result.visualHook
 
-        if (videoPrompts || voicePrompt || musicPrompt) {
+        if (videoPrompts || voicePrompt || musicPrompt || visualHook) {
             const { error: prodError } = await (supabase
                 .from('production_outputs' as any) as any)
                 .insert([{
                     script_id: scriptId,
                     video_prompts: videoPrompts,
                     voice_prompt: voicePrompt,
-                    music_prompt: musicPrompt
+                    music_prompt: musicPrompt,
+                    visual_hook: visualHook
                 }])
 
             if (prodError) throw prodError

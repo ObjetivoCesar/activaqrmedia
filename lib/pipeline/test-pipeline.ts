@@ -55,6 +55,17 @@ El objetivo es que guarden mi contacto escaneando mi código ActivaQR que pondr�
             console.log(`- Versión ${v.version} (Trigger: ${v.triggeredBy})`)
         })
 
+        console.log('\n--- VISUAL HOOK SUGGESTION ---')
+        if (result.visualHook) {
+            console.log(`Hook: ${result.visualHook.hook.instructions}`)
+            console.log(`Plano: ${result.visualHook.cameraAngle.name} - ${result.visualHook.cameraAngle.description}`)
+            if (result.visualHook.microAction) {
+                console.log(`Micro-acción: ${result.visualHook.microAction.name}`)
+            }
+        } else {
+            console.log('No visual hook suggested.')
+        }
+
         console.log('\n=======================================')
         console.log('GUION FINAL GENERADO')
         console.log('=======================================')

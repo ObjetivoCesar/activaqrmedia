@@ -252,7 +252,8 @@ export default function PipelinePage() {
         voicePrompt: productionOutputs?.voice_prompt || '',
         musicPrompt: productionOutputs?.music_prompt || '',
         tokensUsed: 0
-      }
+      },
+      visualHook: productionOutputs?.visual_hook
     })
 
     // 7. Jump immediately to Done Phase
@@ -865,6 +866,32 @@ export default function PipelinePage() {
                 </button>
               ))}
             </div>
+
+            {/* Sugerencia Visual de Grabación */}
+            {result?.visualHook && (
+              <div className="mb-4 p-4 rounded-xl bg-gradient-to-br from-indigo-950/40 to-violet-900/20 border border-indigo-500/30">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xl">🎥</span>
+                  <h3 className="font-bold text-indigo-300 text-xs tracking-widest uppercase">Directriz Visual (Grabación)</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-indigo-400/70 uppercase">El Plano</p>
+                    <p className="text-xs text-indigo-100"><strong className="text-indigo-300">{result.visualHook.cameraAngle.name}</strong>: {result.visualHook.cameraAngle.description}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold text-indigo-400/70 uppercase">La Acción Inicial</p>
+                    <p className="text-xs text-indigo-100">{result.visualHook.hook.instructions}</p>
+                  </div>
+                  {result.visualHook.microAction && (
+                    <div className="space-y-1 sm:col-span-2">
+                      <p className="text-[10px] font-bold text-indigo-400/70 uppercase">Toque Extra</p>
+                      <p className="text-xs text-indigo-100">{result.visualHook.microAction.name} — {result.visualHook.microAction.description}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <pre className="whitespace-pre-wrap text-sm text-neutral-300 bg-neutral-950/50 border border-neutral-800/60 rounded-xl p-5 font-mono leading-relaxed max-h-72 overflow-y-auto">
               {scriptOptions[activeOption]}
